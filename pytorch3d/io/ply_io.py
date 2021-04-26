@@ -38,7 +38,7 @@ _PLY_TYPES = {
     "ushort": _PlyTypeData(2, "H", np.ushort),
     "int": _PlyTypeData(4, "i", np.int32),
     "uint": _PlyTypeData(4, "I", np.uint32),
-    "float": _PlyTypeData(4, "f", np.float32),
+    "float": _PlyTypeData(4, "f", np.float64),
     "double": _PlyTypeData(8, "d", np.float64),
     "int8": _PlyTypeData(1, "b", np.byte),
     "uint8": _PlyTypeData(1, "B", np.ubyte),
@@ -46,7 +46,7 @@ _PLY_TYPES = {
     "uint16": _PlyTypeData(2, "H", np.ushort),
     "int32": _PlyTypeData(4, "i", np.int32),
     "uint32": _PlyTypeData(4, "I", np.uint32),
-    "float32": _PlyTypeData(4, "f", np.float32),
+    "float64": _PlyTypeData(4, "f", np.float64),
     "float64": _PlyTypeData(8, "d", np.float64),
 }
 
@@ -240,9 +240,9 @@ def _read_ply_fixed_size_element_ascii(f, definition: _PlyElementType):
     For example
 
         element vertex 8
-        property float x
-        property float y
-        property float z
+        property double x
+        property double y
+        property double z
 
     Args:
         f: file-like object being read.
@@ -279,15 +279,15 @@ def _read_ply_nolist_element_ascii(f, definition: _PlyElementType):
     For example, given
 
         element vertex 8
-        property float x
-        property float y
-        property float z
-        property uchar red
-        property uchar green
-        property uchar blue
+        property double x
+        property double y
+        property double z
+        property double intensity
+        property double label
+        property double padding
 
     the output will have two arrays, the first containing (x,y,z)
-    and the second (red,green,blue).
+    and the second (intensity,label,padding).
 
     Args:
         f: file-like object being read.
@@ -387,7 +387,7 @@ def _parse_heterogeneous_property_ascii(datum, line_iter, property: _Property):
     Args:
         datum: list to append the single value to. That value will be a numpy
                 array if the property is a list property, otherwise an int or
-                float.
+                double.
         line_iter: iterator to words on the line from which we read.
         property: the property object describing the property we are reading.
     """
@@ -501,9 +501,9 @@ def _read_ply_fixed_size_element_binary(
     For example
 
         element vertex 8
-        property float x
-        property float y
-        property float z
+        property double x
+        property double y
+        property double z
 
 
     Args:
@@ -534,15 +534,15 @@ def _read_ply_element_binary_nolists(f, definition: _PlyElementType, big_endian:
     For example, given
 
         element vertex 8
-        property float x
-        property float y
-        property float z
-        property uchar red
-        property uchar green
-        property uchar blue
+        property double x
+        property double y
+        property double z
+        property double intensity
+        property double label
+        property double padding
 
     the output will have two arrays, the first containing (x,y,z)
-    and the second (red,green,blue).
+    and the second (intensity,label,padding).
 
     Args:
         f: file-like object being read.
@@ -800,7 +800,7 @@ def _get_verts_column_indices(
         for j, letter in enumerate(["x", "y", "z"]):
             if prop.name == letter:
                 point_idxs[j] = i
-        for j, name in enumerate(["red", "green", "blue"]):
+        for j, name in enumerate(["intensity", "label", "padding"]):
             if prop.name == name:
                 color_idxs[j] = i
     if None in point_idxs:
@@ -820,8 +820,8 @@ def _get_verts(
         header, elements: as returned from load_ply_raw.
 
     Returns:
-        verts: FloatTensor of shape (V, 3).
-        vertex_colors: None or FloatTensor of shape (V, 3).
+        verts: DoubleTensor of shape (V, 3).
+        vertex_colors: None or DoubleTensor of shape (V, 3).
     """
 
     vertex = elements.get("vertex", None)
@@ -834,10 +834,10 @@ def _get_verts(
 
     # Case of no vertices
     if vertex_head.count == 0:
-        verts = torch.zeros((0, 3), dtype=torch.float32)
+        verts = torch.zeros((0, 3), dtype=torch.float64)
         if color_idxs is None:
             return verts, None
-        return verts, torch.zeros((0, 3), dtype=torch.float32)
+        return verts, torch.zeros((0, 3), dtype=torch.float64)
 
     # Simple case where the only data is the vertices themselves
     if (
@@ -846,16 +846,16 @@ def _get_verts(
         and vertex[0].ndim == 2
         and vertex[0].shape[1] == 3
     ):
-        return _make_tensor(vertex[0], cols=3, dtype=torch.float32), None
+        return _make_tensor(vertex[0], cols=3, dtype=torch.float64), None
 
     vertex_colors = None
 
     if len(vertex) == 1:
         # This is the case where the whole vertex element has one type,
         # so it was read as a single array and we can index straight into it.
-        verts = torch.tensor(vertex[0][:, point_idxs], dtype=torch.float32)
+        verts = torch.tensor(vertex[0][:, point_idxs], dtype=torch.float64)
         if color_idxs is not None:
-            vertex_colors = torch.tensor(vertex[0][:, color_idxs], dtype=torch.float32)
+            vertex_colors = torch.tensor(vertex[0][:, color_idxs], dtype=torch.float64)
     else:
         # The vertex element is heterogeneous. It was read as several arrays,
         # part by part, where a part is a set of properties with the same type.
@@ -867,7 +867,7 @@ def _get_verts(
             for partnum, array in enumerate(vertex)
             for col in range(array.shape[1])
         ]
-        verts = torch.empty(size=(vertex_head.count, 3), dtype=torch.float32)
+        verts = torch.empty(size=(vertex_head.count, 3), dtype=torch.float64)
         for axis in range(3):
             partnum, col = prop_to_partnum_col[point_idxs[axis]]
             verts.numpy()[:, axis] = vertex[partnum][:, col]
@@ -881,7 +881,7 @@ def _get_verts(
             #   verts[:, axis] = torch.tensor((vertex[partnum][:, col]))
         if color_idxs is not None:
             vertex_colors = torch.empty(
-                size=(vertex_head.count, 3), dtype=torch.float32
+                size=(vertex_head.count, 3), dtype=torch.float64
             )
             for color in range(3):
                 partnum, col = prop_to_partnum_col[color_idxs[color]]
@@ -906,9 +906,9 @@ def _load_ply(
         return_vertex_colors: whether to return vertex colors.
 
     Returns:
-        verts: FloatTensor of shape (V, 3).
+        verts: DoubleTensor of shape (V, 3).
         faces: None or LongTensor of vertex indices, shape (F, 3).
-        vertex_colors: None or FloatTensor of shape (V, 3), only if requested
+        vertex_colors: None or DoubleTensor of shape (V, 3), only if requested
     """
     header, elements = _load_ply_raw(f, path_manager=path_manager)
 
@@ -968,9 +968,9 @@ def load_ply(
     comment made by Greg Turk  { comments keyword specified, like all lines }
     comment this file is a cube
     element vertex 8           { define "vertex" element, 8 of them in file }
-    property float x           { vertex contains float "x" coordinate }
-    property float y           { y coordinate is also a vertex property }
-    property float z           { z coordinate, too }
+    property double x           { vertex contains double "x" coordinate }
+    property double y           { y coordinate is also a vertex property }
+    property double z           { z coordinate, too }
     element face 6             { there are 6 "face" elements in the file }
     property list uchar int vertex_index { "vertex_indices" is a list of ints }
     end_header                 { delimits the end of the header }
@@ -998,7 +998,7 @@ def load_ply(
         path_manager: PathManager for loading if f is a str.
 
     Returns:
-        verts: FloatTensor of shape (V, 3).
+        verts: DoubleTensor of shape (V, 3).
         faces: LongTensor of vertex indices, shape (F, 3).
     """
 
@@ -1026,9 +1026,9 @@ def _save_ply(
 
     Args:
         f: File object to which the 3D data should be written.
-        verts: FloatTensor of shape (V, 3) giving vertex coordinates.
+        verts: DoubleTensor of shape (V, 3) giving vertex coordinates.
         faces: LongTensor of shape (F, 3) giving faces.
-        verts_normals: FloatTensor of shape (V, 3) giving vertex normals.
+        verts_normals: DoubleTensor of shape (V, 3) giving vertex normals.
         ascii: (bool) whether to use the ascii ply format.
         decimal_places: Number of decimal places for saving if ascii=True.
     """
@@ -1049,17 +1049,17 @@ def _save_ply(
     else:
         f.write(b"ply\nformat binary_little_endian 1.0\n")
     f.write(f"element vertex {verts.shape[0]}\n".encode("ascii"))
-    f.write(b"property float x\n")
-    f.write(b"property float y\n")
-    f.write(b"property float z\n")
+    f.write(b"property double x\n")
+    f.write(b"property double y\n")
+    f.write(b"property double z\n")
     if verts_normals.numel() > 0:
-        f.write(b"property float nx\n")
-        f.write(b"property float ny\n")
-        f.write(b"property float nz\n")
+        f.write(b"property double nx\n")
+        f.write(b"property double ny\n")
+        f.write(b"property double nz\n")
     if verts_colors.numel() > 0:
-        f.write(b"property float red\n")
-        f.write(b"property float green\n")
-        f.write(b"property float blue\n")
+        f.write(b"property double intensity\n")
+        f.write(b"property double label\n")
+        f.write(b"property double padding\n")
     if len(verts) and faces is not None:
         f.write(f"element face {faces.shape[0]}\n".encode("ascii"))
         f.write(b"property list uchar int vertex_index\n")
@@ -1077,7 +1077,7 @@ def _save_ply(
             float_str = "%" + ".%df" % decimal_places
         np.savetxt(f, vert_data, float_str)
     else:
-        assert vert_data.dtype == np.float32
+        assert vert_data.dtype == np.float64
         if isinstance(f, BytesIO):
             # tofile only works with real files, but is faster than this.
             f.write(vert_data.tobytes())
@@ -1116,9 +1116,9 @@ def save_ply(
 
     Args:
         f: File (or path) to which the mesh should be written.
-        verts: FloatTensor of shape (V, 3) giving vertex coordinates.
+        verts: DoubleTensor of shape (V, 3) giving vertex coordinates.
         faces: LongTensor of shape (F, 3) giving faces.
-        verts_normals: FloatTensor of shape (V, 3) giving vertex normals.
+        verts_normals: DoubleTensor of shape (V, 3) giving vertex normals.
         ascii: (bool) whether to use the ascii ply format.
         decimal_places: Number of decimal places for saving if ascii=True.
         path_manager: PathManager for interpreting f if it is a str.
@@ -1126,7 +1126,7 @@ def save_ply(
     """
 
     verts_normals = (
-        torch.tensor([], dtype=torch.float32, device=verts.device)
+        torch.tensor([], dtype=torch.float64, device=verts.device)
         if verts_normals is None
         else verts_normals
     )
@@ -1151,7 +1151,7 @@ def save_ply(
         message = "Argument 'verts_normals' should either be empty or of shape (num_verts, 3)."
         raise ValueError(message)
 
-    verts_colors = torch.FloatTensor([])
+    verts_colors = torch.DoubleTensor([])
 
     if path_manager is None:
         path_manager = PathManager()
@@ -1255,7 +1255,7 @@ class PointcloudPlyFormat(PointcloudFormatInterpreter):
                 f=f,
                 verts=points,
                 verts_colors=features,
-                verts_normals=torch.FloatTensor([]),
+                verts_normals=torch.DoubleTensor([]),
                 faces=None,
                 ascii=binary is False,
                 decimal_places=decimal_places,

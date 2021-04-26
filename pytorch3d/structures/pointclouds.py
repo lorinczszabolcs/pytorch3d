@@ -600,7 +600,7 @@ class Pointclouds(object):
         features_list = self.features_list()
         if self.isempty():
             self._points_packed = torch.zeros(
-                (0, 3), dtype=torch.float32, device=self.device
+                (0, 3), dtype=torch.float64, device=self.device
             )
             self._packed_to_cloud_idx = torch.zeros(
                 (0,), dtype=torch.int64, device=self.device
