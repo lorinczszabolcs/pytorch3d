@@ -282,12 +282,12 @@ def _read_ply_nolist_element_ascii(f, definition: _PlyElementType):
         property double x
         property double y
         property double z
-        property double intensity
-        property double label
-        property double padding
+        property double scalar_intensity
+        property double scalar_label
+        property double scalar_padding
 
     the output will have two arrays, the first containing (x,y,z)
-    and the second (intensity,label,padding).
+    and the second (scalar_intensity,scalar_label,scalar_padding).
 
     Args:
         f: file-like object being read.
@@ -537,12 +537,12 @@ def _read_ply_element_binary_nolists(f, definition: _PlyElementType, big_endian:
         property double x
         property double y
         property double z
-        property double intensity
-        property double label
-        property double padding
+        property double scalar_intensity
+        property double scalar_label
+        property double scalar_padding
 
     the output will have two arrays, the first containing (x,y,z)
-    and the second (intensity,label,padding).
+    and the second (scalar_intensity,scalar_label,scalar_padding).
 
     Args:
         f: file-like object being read.
@@ -675,8 +675,8 @@ def _read_ply_element_binary(f, definition: _PlyElementType, big_endian: bool) -
     if not definition.count:
         return []
 
-    if definition.is_constant_type_fixed_size():
-        return _read_ply_fixed_size_element_binary(f, definition, big_endian)
+    # if definition.is_constant_type_fixed_size():
+    #     return _read_ply_fixed_size_element_binary(f, definition, big_endian) # not working with subsampled data
     if definition.is_fixed_size():
         return _read_ply_element_binary_nolists(f, definition, big_endian)
     if definition.try_constant_list():
@@ -800,7 +800,7 @@ def _get_verts_column_indices(
         for j, letter in enumerate(["x", "y", "z"]):
             if prop.name == letter:
                 point_idxs[j] = i
-        for j, name in enumerate(["intensity", "label", "padding"]):
+        for j, name in enumerate(["scalar_intensity", "scalar_label", "scalar_padding"]):
             if prop.name == name:
                 color_idxs[j] = i
     if None in point_idxs:
@@ -1057,9 +1057,9 @@ def _save_ply(
         f.write(b"property double ny\n")
         f.write(b"property double nz\n")
     if verts_colors.numel() > 0:
-        f.write(b"property double intensity\n")
-        f.write(b"property double label\n")
-        f.write(b"property double padding\n")
+        f.write(b"property double scalar_intensity\n")
+        f.write(b"property double scalar_label\n")
+        f.write(b"property double scalar_padding\n")
     if len(verts) and faces is not None:
         f.write(f"element face {faces.shape[0]}\n".encode("ascii"))
         f.write(b"property list uchar int vertex_index\n")
