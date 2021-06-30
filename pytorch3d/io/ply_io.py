@@ -675,8 +675,8 @@ def _read_ply_element_binary(f, definition: _PlyElementType, big_endian: bool) -
     if not definition.count:
         return []
 
-    # if definition.is_constant_type_fixed_size():
-    #     return _read_ply_fixed_size_element_binary(f, definition, big_endian) # not working with subsampled data
+    if definition.is_constant_type_fixed_size():
+        return _read_ply_fixed_size_element_binary(f, definition, big_endian)
     if definition.is_fixed_size():
         return _read_ply_element_binary_nolists(f, definition, big_endian)
     if definition.try_constant_list():
