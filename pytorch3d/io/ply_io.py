@@ -240,9 +240,9 @@ def _read_ply_fixed_size_element_ascii(f, definition: _PlyElementType):
     For example
 
         element vertex 8
-        property double x
-        property double y
-        property double z
+        property float x
+        property float y
+        property float z
 
     Args:
         f: file-like object being read.
@@ -279,12 +279,12 @@ def _read_ply_nolist_element_ascii(f, definition: _PlyElementType):
     For example, given
 
         element vertex 8
-        property double x
-        property double y
-        property double z
-        property double scalar_intensity
-        property double scalar_label
-        property double scalar_padding
+        property float x
+        property float y
+        property float z
+        property float scalar_intensity
+        property float scalar_label
+        property float scalar_padding
 
     the output will have two arrays, the first containing (x,y,z)
     and the second (scalar_intensity,scalar_label,scalar_padding).
@@ -501,9 +501,9 @@ def _read_ply_fixed_size_element_binary(
     For example
 
         element vertex 8
-        property double x
-        property double y
-        property double z
+        property float x
+        property float y
+        property float z
 
 
     Args:
@@ -534,12 +534,12 @@ def _read_ply_element_binary_nolists(f, definition: _PlyElementType, big_endian:
     For example, given
 
         element vertex 8
-        property double x
-        property double y
-        property double z
-        property double scalar_intensity
-        property double scalar_label
-        property double scalar_padding
+        property float x
+        property float y
+        property float z
+        property float scalar_intensity
+        property float scalar_label
+        property float scalar_padding
 
     the output will have two arrays, the first containing (x,y,z)
     and the second (scalar_intensity,scalar_label,scalar_padding).
@@ -968,9 +968,9 @@ def load_ply(
     comment made by Greg Turk  { comments keyword specified, like all lines }
     comment this file is a cube
     element vertex 8           { define "vertex" element, 8 of them in file }
-    property double x           { vertex contains double "x" coordinate }
-    property double y           { y coordinate is also a vertex property }
-    property double z           { z coordinate, too }
+    property float x           { vertex contains float "x" coordinate }
+    property float y           { y coordinate is also a vertex property }
+    property float z           { z coordinate, too }
     element face 6             { there are 6 "face" elements in the file }
     property list uchar int vertex_index { "vertex_indices" is a list of ints }
     end_header                 { delimits the end of the header }
@@ -1049,17 +1049,17 @@ def _save_ply(
     else:
         f.write(b"ply\nformat binary_little_endian 1.0\n")
     f.write(f"element vertex {verts.shape[0]}\n".encode("ascii"))
-    f.write(b"property double x\n")
-    f.write(b"property double y\n")
-    f.write(b"property double z\n")
+    f.write(b"property float x\n")
+    f.write(b"property float y\n")
+    f.write(b"property float z\n")
     if verts_normals.numel() > 0:
         f.write(b"property double nx\n")
         f.write(b"property double ny\n")
         f.write(b"property double nz\n")
     if verts_colors.numel() > 0:
-        f.write(b"property double scalar_intensity\n")
-        f.write(b"property double scalar_label\n")
-        f.write(b"property double scalar_padding\n")
+        f.write(b"property float scalar_intensity\n")
+        f.write(b"property float scalar_label\n")
+        f.write(b"property float scalar_padding\n")
     if len(verts) and faces is not None:
         f.write(f"element face {faces.shape[0]}\n".encode("ascii"))
         f.write(b"property list uchar int vertex_index\n")
