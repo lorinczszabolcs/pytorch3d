@@ -38,7 +38,7 @@ _PLY_TYPES = {
     "ushort": _PlyTypeData(2, "H", np.ushort),
     "int": _PlyTypeData(4, "i", np.int32),
     "uint": _PlyTypeData(4, "I", np.uint32),
-    "float": _PlyTypeData(4, "f", np.float64),
+    "float": _PlyTypeData(4, "f", np.float32),
     "double": _PlyTypeData(8, "d", np.float64),
     "int8": _PlyTypeData(1, "b", np.byte),
     "uint8": _PlyTypeData(1, "B", np.ubyte),
@@ -515,19 +515,10 @@ def _read_ply_fixed_size_element_binary(
         1-element list containing a 2D numpy array corresponding to the data.
         The rows are the different values. There is one column for each property.
     """
-    print(definition)
-    print(definition.properties)
-    print(definition.properties[0])
-    print(definition.properties[0].data_type)
-    print(_PLY_TYPES[definition.properties[0].data_type])
     ply_type = _PLY_TYPES[definition.properties[0].data_type]
     np_type = ply_type.np_type
     type_size = ply_type.size
     needed_length = definition.count * len(definition.properties)
-    print(type_size)
-    print(np_type)
-    print(definition.count)
-    print(needed_length)
     data = _read_raw_array(f, definition.name, needed_length, np_type, type_size)
 
     if (sys.byteorder == "big") != big_endian:
@@ -687,10 +678,8 @@ def _read_ply_element_binary(f, definition: _PlyElementType, big_endian: bool) -
     if definition.is_constant_type_fixed_size():
         return _read_ply_fixed_size_element_binary(f, definition, big_endian) # not working with subsampled data
     if definition.is_fixed_size():
-        print("OMG")
         return _read_ply_element_binary_nolists(f, definition, big_endian)
     if definition.try_constant_list():
-        print("OMG2")
         data = _try_read_ply_constant_list_binary(f, definition, big_endian)
         if data is not None:
             return data
