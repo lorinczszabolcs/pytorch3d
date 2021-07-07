@@ -1049,17 +1049,17 @@ def _save_ply(
     else:
         f.write(b"ply\nformat binary_little_endian 1.0\n")
     f.write(f"element vertex {verts.shape[0]}\n".encode("ascii"))
-    f.write(b"property float x\n")
-    f.write(b"property float y\n")
-    f.write(b"property float z\n")
+    f.write(b"property double x\n")
+    f.write(b"property double y\n")
+    f.write(b"property double z\n")
     if verts_normals.numel() > 0:
         f.write(b"property double nx\n")
         f.write(b"property double ny\n")
         f.write(b"property double nz\n")
     if verts_colors.numel() > 0:
-        f.write(b"property float scalar_intensity\n")
-        f.write(b"property float scalar_label\n")
-        f.write(b"property float scalar_padding\n")
+        f.write(b"property double scalar_intensity\n")
+        f.write(b"property double scalar_label\n")
+        f.write(b"property double scalar_padding\n")
     if len(verts) and faces is not None:
         f.write(f"element face {faces.shape[0]}\n".encode("ascii"))
         f.write(b"property list uchar int vertex_index\n")
